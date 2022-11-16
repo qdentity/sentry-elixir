@@ -101,6 +101,18 @@ defmodule Sentry.LoggerBackend do
       {%_{__exception__: true} = exception, stacktrace} when is_list(stacktrace) ->
         Sentry.capture_exception(exception, [stacktrace: stacktrace] ++ opts)
 
+      {:killed, stacktrace} when is_list(stacktrace) ->
+        msg = :unicode.characters_to_binary(msg)
+
+        if stacktrace == [] do
+          Sentry.capture_message(msg, opts)
+        else
+          Sentry.capture_exception(
+            %Sentry.CrashError{message: msg},
+            [stacktrace: stacktrace] ++ opts
+          )
+        end
+
       {other, stacktrace} when is_list(stacktrace) ->
         Sentry.capture_exception(
           Sentry.CrashError.exception(other),
